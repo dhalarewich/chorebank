@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  PARENT
+}
+
+enum ActorType {
+  PARENT
+  KID
+  SYSTEM
+}
+
+enum StarStatus {
+  EMPTY
+  FUTURE
+  PENDING
+  CLAIMED
+}
+
+enum RedemptionStatus {
+  PENDING
+  FULFILLED
+}
+
+enum CoinLedgerType {
+  REWARD_SPEND
+  PAYDAY_STARS
+  PAYDAY_INTEREST
+  ADMIN_RESET
+}
+
+enum KidsScreen {
+  ACTIVE
+  PAYDAY_READY
+  CELEBRATION
+  CLOSED
+}
+
+model Household {
+  id               String     @id @default(cuid())
+  slug             String     @unique
+  name             String
+  timeZone         String     @default("UTC")
+  interestRate     Int        @default(5)
+  paydayDay        Int        @default(6)
+  currentDay       Int        @default(4)
+  kidsScreen       KidsScreen @default(ACTIVE)
+  currentWeekStart DateTime
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  appSettings       AppSettings?
+  users             User[]
+  children          Child[]
+  choreTemplates    ChoreTemplate[]
+  choreDayStatuses  ChoreDayStatus[]
+  rewardItems       RewardItem[]
+  redemptions       Redemption[]
+  paydayRuns        PaydayRun[]
+  coinLedgerEntries CoinLedgerEntry[]
+  auditEvents       AuditEvent[]
+}
+
+model AppSettings {
+  id                String   @id @default(cuid())
+  householdId       String   @unique
+  soundsEnabled     Boolean  @default(true)
+  animationsEnabled Boolean  @default(true)
+  demoModeEnabled   Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id           String   @id @default(cuid())
+  householdId  String
+  email        String
+  displayName  String
+  passwordHash String
+  role         UserRole @default(PARENT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, email])
+}
+
+model Child {
+  id               String    @id @default(cuid())
+  householdId      String
+  slug             String
+  name             String
+  age              Int
+  avatar           String
+  accent           String
+  coins            Int       @default(0)
+  pinHash          String
+  pinFailCount     Int       @default(0)
+  pinLockedUntil   DateTime?
+  lastPinAttemptAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  household         Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  choreTemplates    ChoreTemplate[]
+  dayStatuses       ChoreDayStatus[]
+  redemptions       Redemption[]
+  coinLedgerEntries CoinLedgerEntry[]
+  paydayResults     PaydayResult[]
+
+  @@unique([householdId, slug])
+}
+
+model ChoreTemplate {
+  id          String    @id @default(cuid())
+  householdId String
+  childId     String
+  slug        String
+  label       String
+  icon        String
+  isBonus     Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  active      Boolean   @default(true)
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  household   Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  child       Child            @relation(fields: [childId], references: [id], onDelete: Cascade)
+  dayStatuses ChoreDayStatus[]
+
+  @@unique([childId, slug])
+  @@index([householdId, childId])
+}
+
+model ChoreDayStatus {
+  id              String     @id @default(cuid())
+  householdId     String
+  childId         String
+  choreTemplateId String
+  weekStart       DateTime
+  dayIndex        Int
+  status          StarStatus
+  awardedByUserId String?
+  awardedAt       DateTime?
+  claimedAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  household     Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  child         Child         @relation(fields: [childId], references: [id], onDelete: Cascade)
+  choreTemplate ChoreTemplate @relation(fields: [choreTemplateId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, choreTemplateId, weekStart, dayIndex])
+  @@index([householdId, weekStart, dayIndex])
+}
+
+model RewardItem {
+  id          String    @id @default(cuid())
+  householdId String
+  slug        String
+  name        String
+  icon        String
+  description String
+  cost        Int
+  sortOrder   Int       @default(0)
+  active      Boolean   @default(true)
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  redemptions Redemption[]
+
+  @@unique([householdId, slug])
+}
+
+model Redemption {
+  id                  String           @id @default(cuid())
+  householdId         String
+  childId             String
+  rewardItemId        String?
+  rewardSlugAtRequest String
+  rewardNameAtRequest String
+  rewardIconAtRequest String
+  costAtRequest       Int
+  status              RedemptionStatus @default(PENDING)
+  archivedAt          DateTime?
+  createdAt           DateTime         @default(now())
+  fulfilledAt         DateTime?
+  fulfilledByUserId   String?
+
+  household  Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  child      Child       @relation(fields: [childId], references: [id], onDelete: Cascade)
+  rewardItem RewardItem? @relation(fields: [rewardItemId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, status, createdAt])
+}
+
+model CoinLedgerEntry {
+  id            String         @id @default(cuid())
+  householdId   String
+  childId       String
+  movementType  CoinLedgerType
+  delta         Int
+  balanceBefore Int
+  balanceAfter  Int
+  weekStart     DateTime?
+  sourceId      String?
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  child     Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, childId, createdAt])
+  @@index([householdId, movementType, createdAt])
+}
+
+model PaydayRun {
+  id               String   @id @default(cuid())
+  householdId      String
+  weekStart        DateTime
+  interestRate     Int
+  executedByUserId String?
+  createdAt        DateTime @default(now())
+
+  household Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  results   PaydayResult[]
+
+  @@unique([householdId, weekStart])
+}
+
+model PaydayResult {
+  id          String @id @default(cuid())
+  paydayRunId String
+  childId     String
+  carried     Int
+  stars       Int
+  interest    Int
+  newBalance  Int
+
+  paydayRun PaydayRun @relation(fields: [paydayRunId], references: [id], onDelete: Cascade)
+  child     Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([paydayRunId, childId])
+}
+
+model AuditEvent {
+  id          String    @id @default(cuid())
+  householdId String
+  actorType   ActorType
+  actorId     String?
+  eventType   String
+  payload     Json
+  createdAt   DateTime  @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, createdAt])
+}
+
+model RateLimitBucket {
+  id          String   @id @default(cuid())
+  scope       String
+  key         String
+  windowStart DateTime
+  count       Int      @default(0)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([scope, key, windowStart])
+  @@index([scope, key, expiresAt])
+}
