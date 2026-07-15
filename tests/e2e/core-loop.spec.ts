@@ -32,7 +32,7 @@ async function loginParent(page: Page) {
   await page.goto("/auth");
   await page.getByRole("button", { name: "Parent", exact: true }).click();
   await page.fill("#parent-email", "parent@example.test");
-  await page.fill("#parent-password", "test-password");
+  await page.fill("#parent-password", "test-password-123");
   await page.getByRole("button", { name: "Sign In as Parent" }).click();
   await expect(page).toHaveURL(/\/parent$/);
 }
@@ -86,12 +86,7 @@ async function logout(page: Page) {
     }
   }
 
-  if (!selectedRowId) {
-    const fallbackRow = child.chores[0];
-    expect(fallbackRow).toBeTruthy();
-    selectedRowId = fallbackRow.id;
-    selectedDay = Math.min(board.state.currentDay, 6);
-  }
+  expect(selectedRowId, "fresh fixture should have an awardable chore").toBeTruthy();
 
   const awardResponse = await page.request.post("/api/stars/award", {
     data: {

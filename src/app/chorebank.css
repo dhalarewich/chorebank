@@ -224,6 +224,74 @@ input:focus-visible {
   font-weight: 600;
 }
 
+.setup-shell {
+  padding-block: 40px;
+}
+
+.setup-card {
+  width: min(680px, 100%);
+}
+
+.setup-kicker {
+  color: #9a6b00;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.setup-copy,
+.setup-help {
+  color: var(--ink-secondary);
+}
+
+.setup-copy {
+  margin: 6px 0 18px;
+  line-height: 1.55;
+}
+
+.setup-help {
+  margin: -3px 0 3px;
+  font-size: 0.75rem;
+}
+
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.setup-field {
+  display: grid;
+  gap: 8px;
+}
+
+.setup-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 6px 0;
+  color: var(--ink-primary);
+  font-weight: 600;
+}
+
+.setup-check input {
+  width: 18px;
+  height: 18px;
+}
+
+.setup-link {
+  display: grid;
+  place-items: center;
+  margin-top: 18px;
+}
+
+@media (max-width: 600px) {
+  .setup-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .app-header {
   background: var(--ink-primary);
   color: var(--ink-inverse);

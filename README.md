@@ -14,7 +14,7 @@ cp .env.example .env
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
 ```
 
-3. Put the generated value in `AUTH_SECRET` and choose a long `POSTGRES_PASSWORD` in `.env`.
+3. Generate a second random value. Put the two values in `AUTH_SECRET` and `SETUP_TOKEN`, choose a long `POSTGRES_PASSWORD`, and choose a lowercase `DEFAULT_HOUSEHOLD_ID` slug in `.env`.
 4. Start Chorebank:
 
 ```bash
@@ -22,19 +22,9 @@ docker compose up --build -d
 docker compose ps
 ```
 
-5. Run the guided setup inside the app container:
+5. Visit `http://SERVER_LAN_IP:3000`. An empty installation opens `/setup`. Enter `SETUP_TOKEN` from `.env`, then create the household, parent login, kid PIN, and first child. The browser uses `DEFAULT_HOUSEHOLD_ID` as the canonical slug, refuses mismatches, and permanently disables setup after success.
 
-```bash
-docker compose exec app npm run setup
-```
-
-It asks for the household name and slug, timezone, parent email/password, kid PIN, first child, and whether to add generic starter chores and rewards. It refuses to run if any household already exists; it never resets or overwrites data.
-
-6. Set `DEFAULT_HOUSEHOLD_ID` in `.env` to the slug you chose, then restart the app and visit `http://SERVER_LAN_IP:3000/auth`:
-
-```bash
-docker compose up -d --force-recreate app
-```
+The equivalent terminal wizard remains available as `docker compose exec app npm run setup`. It refuses to run if household data exists and never resets or overwrites data.
 
 Android tablets work as normal browser clients. Open that LAN address in Chrome and use **Add to Home screen** if desired. Chorebank does not provide offline operation or native Android packaging.
 
@@ -73,13 +63,13 @@ Use Node.js 22+ and an existing PostgreSQL database.
 ```bash
 npm ci
 cp .env.example .env
-# Set DATABASE_URL, DIRECT_URL, AUTH_SECRET, and a placeholder DEFAULT_HOUSEHOLD_ID in .env.
+# Set DATABASE_URL, DIRECT_URL, AUTH_SECRET, SETUP_TOKEN, and DEFAULT_HOUSEHOLD_ID in .env.
 npm run prisma:generate
 npm run prisma:migrate:deploy
-npm run setup
-# Change DEFAULT_HOUSEHOLD_ID to the setup slug, then:
 npm run dev
 ```
+
+Open `http://localhost:3000/setup`, or run `npm run setup` and enter the same slug as `DEFAULT_HOUSEHOLD_ID`.
 
 For production, run `npm run build` followed by `npm run start`. PostgreSQL backups are your responsibility; use the `pg_dump` and `pg_restore` procedure above.
 
@@ -87,7 +77,7 @@ If a parent password is lost, run `npm run password:reset` from the application 
 
 ## Deployment and architecture
 
-Docker Compose and PostgreSQL are the supported self-hosted path. Vercel with a managed PostgreSQL provider remains possible with `npm run vercel-build`, but is optional rather than required.
+Docker Compose and PostgreSQL are the supported self-hosted path. Railway deployment is documented in [docs/railway.md](docs/railway.md). Vercel with a managed PostgreSQL provider remains possible with `npm run vercel-build`, but is optional rather than required.
 
 See [architecture options](ARCHITECTURE_OPTIONS.md) for intentionally deferred SQLite, offline PWA, and native-tablet work.
 

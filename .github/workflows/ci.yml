@@ -57,10 +57,27 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: chorebank_test
+          POSTGRES_USER: chorebank
+          POSTGRES_PASSWORD: chorebank_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U chorebank -d chorebank_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
     env:
-      DATABASE_URL: postgresql://user:pass@localhost:5432/db
-      DIRECT_URL: postgresql://user:pass@localhost:5432/db
+      DATABASE_URL: postgresql://chorebank:chorebank_test_password@localhost:5432/chorebank_test?schema=public
+      DIRECT_URL: postgresql://chorebank:chorebank_test_password@localhost:5432/chorebank_test?schema=public
       AUTH_SECRET: test-auth-secret
+      DEFAULT_HOUSEHOLD_ID: chorebank-household
+      TENANCY_MODE: single
+      LIVE_E2E_CORE_LOOP: 1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -69,5 +86,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run prisma:generate
+      - run: npm run prisma:migrate:deploy
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

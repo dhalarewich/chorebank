@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: process.env.LIVE_E2E_CORE_LOOP === "1" ? "./tests/e2e/global-setup.ts" : undefined,
   timeout: 30_000,
   use: {
     baseURL: "http://127.0.0.1:3000",
@@ -9,7 +10,7 @@ export default defineConfig({
   },
   webServer: {
     command: "npm run dev",
-    env: { ALLOW_DEMO_MODE: "1" },
+    env: process.env.LIVE_E2E_CORE_LOOP === "1" ? {} : { ALLOW_DEMO_MODE: "1" },
     url: "http://127.0.0.1:3000",
     timeout: 120_000,
     reuseExistingServer: true,
