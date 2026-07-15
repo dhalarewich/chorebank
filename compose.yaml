@@ -7,6 +7,7 @@ services:
       DATABASE_URL: postgresql://chorebank:${POSTGRES_PASSWORD}@db:5432/chorebank?schema=public
       DIRECT_URL: postgresql://chorebank:${POSTGRES_PASSWORD}@db:5432/chorebank?schema=public
       AUTH_SECRET: ${AUTH_SECRET}
+      SETUP_TOKEN: ${SETUP_TOKEN}
       DEFAULT_HOUSEHOLD_ID: ${DEFAULT_HOUSEHOLD_ID:-chorebank-household}
       TENANCY_MODE: single
     depends_on:
