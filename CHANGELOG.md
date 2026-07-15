@@ -10,6 +10,7 @@ All notable changes are recorded here. This project follows [Keep a Changelog](h
 - Demo-only product screenshots and a README utility-console hero.
 - Protected first-run browser setup, parent-password recovery, Railway deployment configuration, and a database-aware health endpoint.
 - Live PostgreSQL browser testing in CI.
+- V1 open-source readiness and code-audit reports, plus an explicit Node.js 22 runtime requirement.
 
 ### Changed
 
