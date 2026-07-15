@@ -19,6 +19,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
     "setup": "node scripts/setup-household.mjs",
+    "password:reset": "node scripts/reset-parent-password.mjs",
     "pitr:verify": "tsx scripts/pitr-drill-verify.ts",
     "test": "vitest run",
     "test:watch": "vitest",

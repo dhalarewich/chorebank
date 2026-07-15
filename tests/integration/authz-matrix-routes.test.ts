@@ -22,6 +22,7 @@ import { PATCH as patchAdminHouseholdSettings } from "@/app/api/admin/household-
 import { POST as postAdminHouseholdReset } from "@/app/api/admin/household/reset/route";
 import { GET as getAdminAuditEvents } from "@/app/api/admin/audit-events/route";
 import { GET as getAdminReportsSummary } from "@/app/api/admin/reports/summary/route";
+import { PATCH as patchParentPassword } from "@/app/api/auth/password/route";
 
 type Handler = (request: Request) => Promise<Response>;
 
@@ -53,6 +54,7 @@ function makeKidToken() {
 
 describe("API auth/role matrix", () => {
   const parentOnlyEndpoints: Array<{ name: string; method: string; url: string; invoke: Handler }> = [
+    { name: "PATCH /api/auth/password", method: "PATCH", url: "http://localhost:3000/api/auth/password", invoke: patchParentPassword },
     { name: "POST /api/stars/award", method: "POST", url: "http://localhost:3000/api/stars/award", invoke: postAward },
     {
       name: "POST /api/redemptions/fulfill",

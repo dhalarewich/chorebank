@@ -59,6 +59,9 @@ else
   docker compose start app
   exit 1
 fi
+
+# Recover a parent login by selecting and confirming the account interactively
+docker compose exec app npm run password:reset
 ```
 
 The `chorebank-postgres` Docker volume persists data across `docker compose down`. Do not use `docker compose down -v` unless you intentionally want to remove the database after taking a backup.
@@ -80,6 +83,8 @@ npm run dev
 
 For production, run `npm run build` followed by `npm run start`. PostgreSQL backups are your responsibility; use the `pg_dump` and `pg_restore` procedure above.
 
+If a parent password is lost, run `npm run password:reset` from the application directory. The command lists existing parent accounts, requires an exact email confirmation, and prompts privately for a new 12+ character password. It changes no household data.
+
 ## Deployment and architecture
 
 Docker Compose and PostgreSQL are the supported self-hosted path. Vercel with a managed PostgreSQL provider remains possible with `npm run vercel-build`, but is optional rather than required.
@@ -90,6 +95,7 @@ See [architecture options](ARCHITECTURE_OPTIONS.md) for intentionally deferred S
 
 ```bash
 npm run setup
+npm run password:reset
 npm run lint
 npm run typecheck
 npm test

@@ -18,6 +18,7 @@ const { prismaMock, bcryptMock } = vi.hoisted(() => ({
     },
     user: {
       findFirst: vi.fn(),
+      update: vi.fn(),
     },
     appSettings: {
       upsert: vi.fn(),
@@ -43,9 +44,9 @@ vi.mock("bcryptjs", () => ({
 }));
 
 import {
+  changeParentPassword,
   DomainError,
   getRewards,
-  listKidLoginOptions,
   requestRedemption,
   runPayday,
   setKidsScreenState,
@@ -101,12 +102,45 @@ describe("board-service", () => {
 
     const result = await verifyParentLogin({
       householdSlug: "local-household",
-      email: "parent@example.com",
+      email: " Parent@Example.COM ",
       password: "demo-parent",
     });
 
     expect(result).toEqual({ userId: "u_parent", householdId: "local-household" });
+    expect(prismaMock.user.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ email: "parent@example.com" }) }));
     expect(bcryptMock.compare).toHaveBeenCalledWith("demo-parent", "hash");
+  });
+
+  it("changes a parent password after verifying the current password", async () => {
+    prismaMock.user.findFirst.mockResolvedValue({ id: "u_parent", passwordHash: "old-hash" });
+    bcryptMock.compare.mockResolvedValue(true);
+    bcryptMock.hash.mockResolvedValue("new-hash");
+
+    await changeParentPassword({
+      householdSlug: "local-household",
+      userId: "u_parent",
+      currentPassword: "current-password",
+      newPassword: "new-password-long",
+    });
+
+    expect(bcryptMock.compare).toHaveBeenCalledWith("current-password", "old-hash");
+    expect(prismaMock.user.update).toHaveBeenCalledWith({ where: { id: "u_parent" }, data: { passwordHash: "new-hash" } });
+  });
+
+  it("rejects a parent password change when the current password is wrong", async () => {
+    prismaMock.user.findFirst.mockResolvedValue({ id: "u_parent", passwordHash: "old-hash" });
+    bcryptMock.compare.mockResolvedValue(false);
+
+    await expect(changeParentPassword({
+      householdSlug: "local-household",
+      userId: "u_parent",
+      currentPassword: "wrong-password",
+      newPassword: "new-password-long",
+    })).rejects.toSatisfy((error: unknown) => {
+      expectDomainError(error, "AUTH_FAILED");
+      return true;
+    });
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
   });
 
   it("rejects parent login when password does not match", async () => {
@@ -188,21 +222,6 @@ describe("board-service", () => {
         }),
       }),
     );
-  });
-
-  it("returns kid login options ordered by createdAt", async () => {
-    prismaMock.household.findUnique.mockResolvedValue({ id: "h_1" });
-    prismaMock.child.findMany.mockResolvedValue([
-      { slug: "soren", name: "Soren" },
-      { slug: "stella", name: "Stella" },
-    ]);
-
-    const options = await listKidLoginOptions("local-household");
-
-    expect(options).toEqual([
-      { id: "soren", name: "Soren" },
-      { id: "stella", name: "Stella" },
-    ]);
   });
 
   it("rejects redemption request when child lacks coins", async () => {
