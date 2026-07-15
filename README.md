@@ -1,47 +1,102 @@
 # Chorebank
 
-Chorebank is a private, self-hosted family chore and rewards board built with Next.js, Prisma, and PostgreSQL.
+<p align="center">
+  <img src="docs/images/readme-hero.svg" alt="Chorebank utility console: chores in, stars out, rewards ready" width="760">
+</p>
 
-## Recommended: Docker Compose
+<p align="center">
+  A private, self-hosted chore and rewards board for the whole household.
+</p>
 
-Use this on a home server, NAS, or small computer with Docker Compose installed.
+<p align="center">
+  <a href="https://github.com/dhalarewich/chorebank/actions/workflows/ci.yml"><img src="https://github.com/dhalarewich/chorebank/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2f7a5e.svg" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/node.js-22%2B-339933.svg" alt="Node.js 22 or later">
+  <img src="https://img.shields.io/badge/self--hosted-yes-6857d5.svg" alt="Self-hosted">
+</p>
 
-1. Clone the repository and enter it.
-2. Create your ignored local environment file:
+Chorebank turns household work into a simple loop: parents create chores and rewards, kids claim stars, payday converts stars to coins, and kids redeem their coins. Household data stays in the PostgreSQL database you operate.
+
+## What it does
+
+- Tablet-friendly chore boards for each child.
+- Parent tools to award stars, run payday, and fulfill redemptions.
+- Household settings for children, shared chores, rewards, payout rules, and preferences.
+- Protected browser setup for a brand-new installation.
+- Interactive parent-password recovery from the application console.
+
+## Gallery
+
+| Kids' chore board | Reward store |
+| --- | --- |
+| ![Two child chore boards with a week of star cells](docs/images/chore-board.png) | ![Two child reward stores with coin costs](docs/images/reward-store.png) |
+
+| Parent household settings |
+| --- |
+| ![Parent household settings with payday, interest rate, and kid PIN controls](docs/images/parent-settings-household.png) |
+
+All gallery images use fictional demo data and contain no real household information.
+
+## Quick start: Docker Compose
+
+This is the supported home-server, NAS, and small-computer path.
 
 ```bash
+git clone https://github.com/dhalarewich/chorebank.git
+cd chorebank
 cp .env.example .env
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
 ```
 
-3. Generate a second random value. Put the two values in `AUTH_SECRET` and `SETUP_TOKEN`, choose a long `POSTGRES_PASSWORD`, and choose a lowercase `DEFAULT_HOUSEHOLD_ID` slug in `.env`.
-4. Start Chorebank:
+Generate two random values. Put them in `AUTH_SECRET` and `SETUP_TOKEN`, choose a long `POSTGRES_PASSWORD`, and set a lowercase `DEFAULT_HOUSEHOLD_ID` slug in `.env`. Then start Chorebank:
 
 ```bash
 docker compose up --build -d
 docker compose ps
 ```
 
-5. Visit `http://SERVER_LAN_IP:3000`. An empty installation opens `/setup`. Enter `SETUP_TOKEN` from `.env`, then create the household, parent login, kid PIN, and first child. The browser uses `DEFAULT_HOUSEHOLD_ID` as the canonical slug, refuses mismatches, and permanently disables setup after success.
+Open `http://SERVER_LAN_IP:3000`. A blank installation redirects to `/setup`. Enter `SETUP_TOKEN`, then create the household, parent login, shared kid PIN, and first child. Setup permanently closes once the household exists.
 
-The equivalent terminal wizard remains available as `docker compose exec app npm run setup`. It refuses to run if household data exists and never resets or overwrites data.
+The equivalent terminal wizard is available as `docker compose exec app npm run setup`. It refuses to run when household data already exists and never resets or overwrites data.
 
-Android tablets work as normal browser clients. Open that LAN address in Chrome and use **Add to Home screen** if desired. Chorebank does not provide offline operation or native Android packaging.
+Android tablets are regular browser clients. Open the LAN address in Chrome and use **Add to Home screen** if useful. Chorebank is not an offline PWA or native Android app.
 
-### Daily operations
+## Deploy on Railway
+
+Chorebank includes a Railway deployment definition, a database-aware health check, and generated-secret guidance. A Railway template can provide the lowest-friction hosted path: create PostgreSQL and the app together, then finish the same browser setup.
+
+Follow the [Railway deployment guide](docs/railway.md) to test or publish the template. Template publishing is deliberately a Railway account-owner step so billing, backups, generated secrets, and repository access stay under the owner's control.
+
+## Quick start: Node.js
+
+Use Node.js 22+ and PostgreSQL:
+
+```bash
+npm ci
+cp .env.example .env
+# Set DATABASE_URL, DIRECT_URL, AUTH_SECRET, SETUP_TOKEN,
+# and DEFAULT_HOUSEHOLD_ID in .env.
+npm run prisma:generate
+npm run prisma:migrate:deploy
+npm run dev
+```
+
+Open `http://localhost:3000/setup`, or run `npm run setup` with the same slug as `DEFAULT_HOUSEHOLD_ID`. For production, run `npm run build` followed by `npm run start`.
+
+## Operate safely
 
 ```bash
 # Stop without deleting data
 docker compose down
 
-# Update to the latest checked-out release
+# Update the checked-out release
 git pull
 docker compose up --build -d
 
-# Back up the complete PostgreSQL database in PostgreSQL's custom format
+# Back up PostgreSQL in its custom format
 docker compose exec -T db pg_dump -U chorebank -Fc -d chorebank > chorebank-backup.dump
 
-# Restore: replace the database, stop at the first error, then restart the app.
+# Restore a backup, then restart the app
 docker compose stop app
 if docker compose exec -T db pg_restore -U chorebank -d postgres --clean --if-exists --create --exit-on-error < chorebank-backup.dump; then
   docker compose start app
@@ -50,42 +105,21 @@ else
   exit 1
 fi
 
-# Recover a parent login by selecting and confirming the account interactively
+# Recover a parent login interactively
 docker compose exec app npm run password:reset
 ```
 
-The `chorebank-postgres` Docker volume persists data across `docker compose down`. Do not use `docker compose down -v` unless you intentionally want to remove the database after taking a backup.
+The `chorebank-postgres` volume survives `docker compose down`. Do not run `docker compose down -v` unless you deliberately want to remove the database after taking a backup.
 
-## Advanced: Node.js with PostgreSQL
+The recovery command lists parent accounts, requires exact email confirmation, prompts privately for a new 12+ character password, and changes no household data. After a suspected credential compromise, rotate `AUTH_SECRET` as well to invalidate every active session.
 
-Use Node.js 22+ and an existing PostgreSQL database.
+## Development
 
 ```bash
 npm ci
 cp .env.example .env
-# Set DATABASE_URL, DIRECT_URL, AUTH_SECRET, SETUP_TOKEN, and DEFAULT_HOUSEHOLD_ID in .env.
 npm run prisma:generate
 npm run prisma:migrate:deploy
-npm run dev
-```
-
-Open `http://localhost:3000/setup`, or run `npm run setup` and enter the same slug as `DEFAULT_HOUSEHOLD_ID`.
-
-For production, run `npm run build` followed by `npm run start`. PostgreSQL backups are your responsibility; use the `pg_dump` and `pg_restore` procedure above.
-
-If a parent password is lost, run `npm run password:reset` from the application directory. The command lists existing parent accounts, requires an exact email confirmation, and prompts privately for a new 12+ character password. It changes no household data.
-
-## Deployment and architecture
-
-Docker Compose and PostgreSQL are the supported self-hosted path. Railway deployment is documented in [docs/railway.md](docs/railway.md). Vercel with a managed PostgreSQL provider remains possible with `npm run vercel-build`, but is optional rather than required.
-
-See [architecture options](ARCHITECTURE_OPTIONS.md) for intentionally deferred SQLite, offline PWA, and native-tablet work.
-
-## Scripts
-
-```bash
-npm run setup
-npm run password:reset
 npm run lint
 npm run typecheck
 npm test
@@ -93,16 +127,18 @@ npm run test:e2e
 npm run build
 ```
 
-`npm run prisma:seed` intentionally does not create a household. Use `npm run setup` once against an empty database instead.
+CI runs validation, dependency auditing, and the core browser loop against a real PostgreSQL service. `npm run prisma:seed` deliberately does not create a household; use `/setup` or `npm run setup` once against an empty database.
 
-## Demo mode
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution workflow, [AGENTS.md](AGENTS.md) for repository guidance, and [llms.txt](llms.txt) for a compact AI-readable project map.
 
-`http://localhost:3000/?mode=demo` is available for non-persistent development testing. It is disabled in production unless explicitly enabled.
+## Support and security
 
-## Security
+Use [GitHub Issues](https://github.com/dhalarewich/chorebank/issues) for public bugs and documentation problems. Remove household names, emails, credentials, IP addresses, database URLs, and identifying screenshots before posting.
 
-To report a security issue, open a private GitHub security advisory. Do not include household data, credentials, or screenshots containing personal information.
+Report vulnerabilities through a private [GitHub security advisory](https://github.com/dhalarewich/chorebank/security/advisories/new), not a public issue. See [SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md), and [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
-## Support
+## Scope and license
 
-Report public bugs and documentation issues through GitHub Issues. Use a private GitHub security advisory for vulnerabilities. Remove household data, credentials, and identifying screenshots from every report. Chorebank is self-hosted software and does not include guaranteed operational support.
+Docker Compose with PostgreSQL is the supported self-hosted path; Railway is the streamlined hosted option. Vercel with managed PostgreSQL remains possible through `npm run vercel-build`, but is optional. SQLite, offline sync/PWA, and native-tablet packaging are intentionally deferred; see [ARCHITECTURE_OPTIONS.md](ARCHITECTURE_OPTIONS.md).
+
+Chorebank is available under the permissive [MIT License](LICENSE).

@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest an improvement without sharing household data.
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: "Use generic examples only. Do not include household names, identifying details, credentials, network addresses, or screenshots containing private data."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+    validations:
+      required: true
