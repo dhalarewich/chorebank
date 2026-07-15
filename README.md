@@ -137,6 +137,8 @@ Use [GitHub Issues](https://github.com/dhalarewich/chorebank/issues) for public 
 
 Report vulnerabilities through a private [GitHub security advisory](https://github.com/dhalarewich/chorebank/security/advisories/new), not a public issue. See [SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md), and [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
+For the current release posture and evidence, read the [open-source readiness report](OPEN_SOURCE_READINESS_REPORT.md) and [V1 code audit](CODE_AUDIT_REPORT.md).
+
 ## Scope and license
 
 Docker Compose with PostgreSQL is the supported self-hosted path; Railway is the streamlined hosted option. Vercel with managed PostgreSQL remains possible through `npm run vercel-build`, but is optional. SQLite, offline sync/PWA, and native-tablet packaging are intentionally deferred; see [ARCHITECTURE_OPTIONS.md](ARCHITECTURE_OPTIONS.md).
