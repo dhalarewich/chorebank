@@ -990,7 +990,7 @@ export async function verifyParentLogin({
   const user = await prisma.user.findFirst({
     where: {
       household: { slug: householdSlug },
-      email,
+      email: email.trim().toLowerCase(),
     },
     select: { id: true, householdId: true, passwordHash: true },
   });
@@ -1001,6 +1001,36 @@ export async function verifyParentLogin({
   if (!isValid) throw new DomainError("Invalid credentials", "AUTH_FAILED", 401);
 
   return { userId: user.id, householdId: householdSlug };
+}
+
+export async function changeParentPassword({
+  householdSlug,
+  userId,
+  currentPassword,
+  newPassword,
+}: {
+  householdSlug: string;
+  userId: string;
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  if (newPassword.length < 12) {
+    throw new DomainError("New password must be at least 12 characters", "VALIDATION_ERROR", 400);
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { id: userId, household: { slug: householdSlug } },
+    select: { id: true, passwordHash: true },
+  });
+
+  if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
+    throw new DomainError("Current password is incorrect", "AUTH_FAILED", 401);
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash: await bcrypt.hash(newPassword, 10) },
+  });
 }
 
 export async function verifyKidPin({
@@ -1119,20 +1149,4 @@ export async function verifyKidPin({
     childId: child.slug,
     householdId: householdSlug,
   };
-}
-
-export async function listKidLoginOptions(householdSlug: string): Promise<Array<{ id: string; name: string }>> {
-  const household = await prisma.household.findUnique({
-    where: { slug: householdSlug },
-    select: { id: true },
-  });
-  if (!household) return [];
-
-  const children = await prisma.child.findMany({
-    where: { householdId: household.id },
-    select: { slug: true, name: true },
-    orderBy: { createdAt: "asc" },
-  });
-
-  return children.map((child) => ({ id: child.slug, name: child.name }));
 }

@@ -3532,6 +3532,20 @@ input:focus-visible {
   transform: none;
 }
 
+.ps-password-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
+.ps-password-form .ps-btn-save {
+  min-height: 40px;
+}
+
 .ps-setting-interest {
   gap: 4px;
   font-family: var(--font-display);

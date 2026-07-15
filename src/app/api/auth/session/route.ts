@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth/session";
 import { DomainError, verifyKidPin, verifyParentLogin } from "@/lib/server/domain/board-service";
 import { getRequestIp, takeRateLimitToken } from "@/lib/server/auth/rate-limit";
+import { requireSameOrigin } from "@/lib/server/auth/guards";
 import { errorResponse } from "@/lib/server/http";
 
 export const runtime = "nodejs";
@@ -46,6 +47,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    requireSameOrigin(request, getSessionContext(request).isAuthenticated);
     const ip = getRequestIp(request);
     const globalRate = await takeRateLimitToken({
       key: `auth-session:${ip}`,

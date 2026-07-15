@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, FormEvent, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useChoreBoardApp } from "@/hooks/useChoreBoardApp";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -623,6 +623,10 @@ export function ChoreBoardApp({
   const [interestRateDraft, setInterestRateDraft] = useState("5");
   const [paydayDayDraft, setPaydayDayDraft] = useState("6");
   const [sharedKidPinDraft, setSharedKidPinDraft] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [repeatedPassword, setRepeatedPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection>("children");
   const [perfStats, setPerfStats] = useState<Record<PerfBucket, { count: number; lastMs: number; p95Ms: number }>>({
     settingsLoad: { count: 0, lastMs: 0, p95Ms: 0 },
@@ -2618,6 +2622,39 @@ export function ChoreBoardApp({
       }
     };
 
+    const changePassword = async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (newPassword.length < 12) {
+        setAdminError("New password must be at least 12 characters.");
+        return;
+      }
+      if (newPassword !== repeatedPassword) {
+        setAdminError("New passwords do not match.");
+        return;
+      }
+
+      try {
+        setIsChangingPassword(true);
+        setAdminError(null);
+        const response = await fetch("/api/auth/password", {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        if (!response.ok) throw new Error(payload.error ?? "Unable to change password.");
+
+        setCurrentPassword("");
+        setNewPassword("");
+        setRepeatedPassword("");
+        setAdminNotice("Password changed.");
+      } catch (error) {
+        setAdminError(error instanceof Error ? error.message : "Unable to change password.");
+      } finally {
+        setIsChangingPassword(false);
+      }
+    };
+
     return (
       <article className="settings-frame settings-spec-frame">
         <header className="settings-header">
@@ -3266,6 +3303,42 @@ export function ChoreBoardApp({
               </div>
               <span className={`toggle ${state.settings.animations ? "on" : "off"}`}></span>
             </button>
+
+            <form className="ps-password-form" onSubmit={changePassword}>
+              <div className="ps-group-title">Parent password</div>
+              <input
+                className="auth-input"
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                placeholder="Current password"
+                required
+              />
+              <input
+                className="auth-input"
+                type="password"
+                autoComplete="new-password"
+                minLength={12}
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                placeholder="New password (12+ characters)"
+                required
+              />
+              <input
+                className="auth-input"
+                type="password"
+                autoComplete="new-password"
+                minLength={12}
+                value={repeatedPassword}
+                onChange={(event) => setRepeatedPassword(event.target.value)}
+                placeholder="Repeat new password"
+                required
+              />
+              <button className="ps-btn-save" type="submit" disabled={isDemoMode || isChangingPassword}>
+                {isChangingPassword ? "Changing..." : "Change Password"}
+              </button>
+            </form>
 
             <div className="ps-perf-card">
               <div className="ps-group-title">Performance (Session p95)</div>
