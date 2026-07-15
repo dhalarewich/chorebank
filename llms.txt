@@ -1,0 +1,24 @@
+# Chorebank
+
+Chorebank is a private, self-hosted family chore and rewards board. It uses Next.js 16, React 19, Prisma 6, and PostgreSQL. Docker Compose is the supported self-hosted deployment; Railway is the streamlined hosted option.
+
+## Core flows
+
+- Kids view `/kids`: claim available chore stars and browse rewards.
+- Parents view `/parent`: award stars, run payday, fulfill redemptions, and manage settings.
+- Rewards view `/store`: kid-facing reward store.
+- Demo mode: add `?mode=demo` in non-production development. It is non-persistent.
+
+## Setup and commands
+
+- `/setup` configures a blank installation in the browser using `SETUP_TOKEN`; `npm run setup` provides the equivalent terminal wizard.
+- `npm run password:reset` recovers a parent login interactively without email infrastructure.
+- `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`, and `npm run build` validate changes.
+- `npm run prisma:generate` and `npm run prisma:migrate:deploy` prepare a Node.js installation.
+
+## Important constraints
+
+- Never put real household data, credentials, database URLs, IP addresses, or identifying screenshots in repository content, issues, or tests.
+- Keep Docker Compose + PostgreSQL as the documented supported self-hosted path and `docs/railway.md` as the managed deployment guide.
+- Do not imply offline support, native Android packaging, or SQLite support; those are deferred.
+- Read `AGENTS.md`, `SECURITY.md`, `CONTRIBUTING.md`, and `ARCHITECTURE_OPTIONS.md` before making cross-cutting changes.

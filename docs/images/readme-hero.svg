@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Chorebank utility console</title><desc id="desc">A playful console showing chores becoming stars, coins, and rewards.</desc>
+  <defs><linearGradient id="bg" x1="0" x2="1"><stop stop-color="#182437"/><stop offset="1" stop-color="#33285d"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <rect width="1200" height="360" rx="28" fill="url(#bg)"/><g fill="#fff" opacity=".08"><circle cx="74" cy="70" r="2"/><circle cx="1038" cy="70" r="2"/><circle cx="1090" cy="302" r="3"/><circle cx="160" cy="302" r="3"/></g>
+  <text x="70" y="74" fill="#fff" font-family="ui-monospace,monospace" font-size="22" font-weight="700">CHOREBANK / HOME CONSOLE</text><text x="70" y="108" fill="#b8c4d8" font-family="ui-monospace,monospace" font-size="16">private family operations · all systems cozy</text>
+  <g font-family="ui-monospace,monospace" font-weight="700"><rect x="70" y="156" width="230" height="126" rx="18" fill="#fff"/><text x="94" y="194" fill="#6b7280" font-size="14">INPUT</text><text x="94" y="240" fill="#1e2a3a" font-size="28">🛏️  MAKE BED</text><circle cx="266" cy="188" r="9" fill="#46c37b" filter="url(#glow)"/>
+  <path d="M324 219h92" stroke="#f5b83d" stroke-width="8" stroke-linecap="round"/><path d="m405 205 25 14-25 14" fill="#f5b83d"/>
+  <rect x="450" y="156" width="300" height="126" rx="18" fill="#fff6d8" stroke="#f5b83d" stroke-width="3"/><text x="476" y="194" fill="#a36e00" font-size="14">PROGRESS</text><text x="476" y="240" fill="#1e2a3a" font-size="28">★ ★ ★  +3</text>
+  <path d="M774 219h92" stroke="#f5b83d" stroke-width="8" stroke-linecap="round"/><path d="m855 205 25 14-25 14" fill="#f5b83d"/>
+  <rect x="900" y="156" width="230" height="126" rx="18" fill="#fcecf4"/><text x="924" y="194" fill="#bc4f82" font-size="14">REWARD READY</text><text x="924" y="240" fill="#1e2a3a" font-size="28">🍦  10 COINS</text></g>
+  <text x="600" y="330" fill="#d9d2ff" text-anchor="middle" font-family="ui-monospace,monospace" font-size="16">CHORES IN  →  STARS OUT  →  SMALL WINS REDEEMED</text>
+</svg>
