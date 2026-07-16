@@ -42,7 +42,7 @@ jobs:
           pip install semgrep
           semgrep scan --config p/owasp-top-ten --config p/secrets src prisma scripts .github/workflows
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Trivy filesystem scan
