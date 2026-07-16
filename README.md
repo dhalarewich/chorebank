@@ -63,9 +63,9 @@ Android tablets are regular browser clients. Open the LAN address in Chrome and 
 
 ## Deploy on Railway
 
-Chorebank includes a Railway deployment definition, a database-aware health check, and generated-secret guidance. A Railway template can provide the lowest-friction hosted path: create PostgreSQL and the app together, then finish the same browser setup.
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/gtF9bg)
 
-Follow the [Railway deployment guide](docs/railway.md) to test or publish the template. Template publishing is deliberately a Railway account-owner step so billing, backups, generated secrets, and repository access stay under the owner's control.
+The template creates Chorebank and PostgreSQL together with generated secrets and no configuration questions. After deployment, open the app service variables, copy `SETUP_TOKEN`, and complete `/setup`. See the [Railway deployment guide](docs/railway.md) for backups, recovery, and updates.
 
 ## Quick start: Node.js
 

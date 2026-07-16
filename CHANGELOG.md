@@ -4,6 +4,10 @@ All notable changes are recorded here. This project follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+
+- Public no-input Railway template for one-click Chorebank and PostgreSQL deployment.
+
 ## [1.0.0] - 2026-07-16
 
 ### Added
