@@ -20,7 +20,7 @@ Create an app service and a PostgreSQL service named `Postgres`. Enable public H
 
 Do not add the parent password or kid PIN as variables. The owner enters them once at `/setup`; Chorebank stores only password hashes in PostgreSQL.
 
-Railway templates and generated secrets are configured in the Railway template editor, not in `railway.json`. Use reference variables so Railway deploys PostgreSQL before the app. Do not seal `SETUP_TOKEN` in the template: sealed values cannot be viewed, and the owner needs this value for `/setup`. Publish the template only after testing it in a fresh Railway project.
+Railway templates and generated secrets are configured in the Railway template editor, not in `railway.json`. Use reference variables so Railway deploys PostgreSQL before the app. Do not seal `SETUP_TOKEN` in the template: sealed values cannot be viewed, and the owner needs this value for `/setup`. This template was verified in a clean project through setup, both login roles, redeployment, password recovery, and PITR verification.
 
 ## Household owner actions
 
