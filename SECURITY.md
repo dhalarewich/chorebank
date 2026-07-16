@@ -18,7 +18,7 @@ Report issues affecting Chorebank source code, Docker Compose configuration, CI 
 
 ## Hardening a self-hosted instance
 
-- Generate unique high-entropy `AUTH_SECRET` and `SETUP_TOKEN` values plus a strong PostgreSQL password.
+- Generate unique high-entropy `AUTH_SECRET` and `SETUP_TOKEN` values of at least 32 characters (not placeholders) plus a strong PostgreSQL password.
 - Keep the host, Docker, Node.js image, and PostgreSQL image patched.
 - Expose the service only on networks and through reverse proxies you trust; use HTTPS when it leaves a trusted LAN.
 - Back up PostgreSQL regularly and protect backups like household data.

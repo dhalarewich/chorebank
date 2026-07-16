@@ -11,7 +11,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://user:pass@localhost:5432/db
       DIRECT_URL: postgresql://user:pass@localhost:5432/db
-      AUTH_SECRET: test-auth-secret
+      AUTH_SECRET: test-auth-secret-for-chorebank-ci-only
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -74,7 +74,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://chorebank:chorebank_test_password@localhost:5432/chorebank_test?schema=public
       DIRECT_URL: postgresql://chorebank:chorebank_test_password@localhost:5432/chorebank_test?schema=public
-      AUTH_SECRET: test-auth-secret
+      AUTH_SECRET: test-auth-secret-for-chorebank-ci-only
       DEFAULT_HOUSEHOLD_ID: chorebank-household
       TENANCY_MODE: single
       LIVE_E2E_CORE_LOOP: 1

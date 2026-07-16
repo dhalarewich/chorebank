@@ -48,7 +48,7 @@ cp .env.example .env
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
 ```
 
-Generate two random values. Put them in `AUTH_SECRET` and `SETUP_TOKEN`, choose a long `POSTGRES_PASSWORD`, and set a lowercase `DEFAULT_HOUSEHOLD_ID` slug in `.env`. Then start Chorebank:
+Generate two random values. Put them in `AUTH_SECRET` and `SETUP_TOKEN`, choose a long `POSTGRES_PASSWORD`, and set a lowercase `DEFAULT_HOUSEHOLD_ID` slug in `.env`. Production rejects secrets shorter than 32 characters or obvious placeholder values. Then start Chorebank:
 
 ```bash
 docker compose up --build -d
@@ -91,6 +91,9 @@ docker compose down
 
 # Update the checked-out release
 git pull
+# Pull the app base image and PostgreSQL image before recreating services
+docker pull node:22-bookworm-slim
+docker pull postgres:16-alpine
 docker compose up --build -d
 
 # Back up PostgreSQL in its custom format

@@ -68,11 +68,12 @@ export function AuthScreen() {
         <div className="auth-title">Chorebank</div>
         <div className="auth-subtitle">{helperText}</div>
 
-        <div className="auth-role-tabs" role="tablist" aria-label="Choose role">
+        <div className="auth-role-tabs" role="group" aria-label="Choose role">
           <button
             type="button"
             className={`auth-role-btn ${role === "parent" ? "is-active" : ""}`}
             onClick={() => setRole("parent")}
+            aria-pressed={role === "parent"}
           >
             Parent
           </button>
@@ -80,6 +81,7 @@ export function AuthScreen() {
             type="button"
             className={`auth-role-btn ${role === "kid" ? "is-active" : ""}`}
             onClick={() => setRole("kid")}
+            aria-pressed={role === "kid"}
           >
             Kid
           </button>
@@ -93,8 +95,10 @@ export function AuthScreen() {
               </label>
               <input
                 id="parent-email"
+                name="email"
                 className="auth-input"
                 type="email"
+                autoComplete="username"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
@@ -105,8 +109,10 @@ export function AuthScreen() {
               </label>
               <input
                 id="parent-password"
+                name="password"
                 className="auth-input"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
@@ -119,10 +125,12 @@ export function AuthScreen() {
               </label>
               <input
                 id="kid-pin"
+                name="pin"
                 className="auth-input"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 type="password"
+                autoComplete="current-password"
                 value={kidPin}
                 onChange={(event) => setKidPin(event.target.value)}
                 required
@@ -130,7 +138,8 @@ export function AuthScreen() {
             </>
           )}
 
-          {errorMessage ? <div className="auth-error">{errorMessage}</div> : null}
+          {errorMessage ? <div className="auth-error" role="alert">{errorMessage}</div> : null}
+          <div className="sr-only" role="status" aria-live="polite">{isSubmitting ? "Signing in." : ""}</div>
 
           <button type="submit" className="auth-submit" disabled={isSubmitting}>
             {isSubmitting ? "Signing in..." : role === "parent" ? "Sign In as Parent" : "Enter as Kid"}

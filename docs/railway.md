@@ -31,14 +31,13 @@ Railway templates and generated secrets are configured in the Railway template e
 
 ## Owner commands
 
-Run maintenance commands with the app service's Railway variables:
+Run maintenance commands inside the deployed app container so they can reach Railway's private PostgreSQL hostname. On first use, Railway asks to register a local SSH key.
 
 ```bash
-# Verify database access and the current backup/recovery prerequisites.
-railway run npm run pitr:verify
-
-# Reset a forgotten parent password interactively.
-railway run npm run password:reset
+# Open a shell in the app service, then run either command inside it.
+railway ssh --service chorebank
+npm run pitr:verify
+npm run password:reset
 ```
 
 Do not edit password hashes directly. After a suspected credential compromise, also rotate `AUTH_SECRET` to invalidate every active session.

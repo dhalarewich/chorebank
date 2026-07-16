@@ -57,7 +57,9 @@ npm run password:reset
 # Docker
 docker compose exec app npm run password:reset
 # Railway
-railway run npm run password:reset
+railway ssh --service chorebank
+# Run this inside the app container.
+npm run password:reset
 ```
 
 The command lists parent accounts, requires exact email confirmation, privately prompts for a new 12+ character password, and does not alter household data. After suspected compromise, rotate `AUTH_SECRET` to invalidate all sessions.

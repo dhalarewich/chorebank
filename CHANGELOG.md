@@ -15,6 +15,7 @@ All notable changes are recorded here. This project follows [Keep a Changelog](h
 ### Changed
 
 - Clarified supported deployment, privacy expectations, deferred platform work, and release communication.
+- Production rejects short or placeholder session and setup secrets; setup, recovery, and Docker update paths are clearer.
 
 ## [0.1.0] - 2026-07-15
 
