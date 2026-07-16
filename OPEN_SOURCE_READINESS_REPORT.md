@@ -7,9 +7,9 @@ Scope: first-run experience, authentication and recovery, security, email, opera
 
 Chorebank is ready to publish as a **high-quality open-source V1**. Its core product, clean install, browser onboarding, login recovery, documentation, CI, security scanning, repository presentation, and Railway runtime path are release-ready.
 
-The public Railway template is configured with Chorebank, PostgreSQL, generated secrets, reference variables, persistent storage, and no required deployment inputs. The source project itself has been deployed from scratch with Railway PostgreSQL, configured through `/setup`, tested with parent and kid login, redeployed with data persistence, and exercised through container-based password recovery and PITR verification. One independent template-derived deployment remains the final one-click validation.
+The shareable Railway template is configured with Chorebank, PostgreSQL, generated secrets, reference variables, persistent storage, and no required deployment inputs. An independent project provisioned from the template passed database health, `/setup`, parent and kid login, starter data, redeploy persistence, container-based password recovery, and PITR verification.
 
-Overall readiness: **4.7/5**.
+Overall readiness: **4.8/5**.
 
 ## Final execution-plan check
 
@@ -24,8 +24,8 @@ Overall readiness: **4.7/5**.
 | Repository quality | MIT, polished README and screenshots, `llms.txt`, contributing/security/release docs, issue templates, Dependabot | Pass |
 | Independent release gate | Validation, security scans, live E2E, local build, and code audit | Pass |
 | Railway deployment | Fresh two-service deployment, setup, both login roles, persistence, recovery, and health check | Pass |
-| Railway template | [Public two-service template](https://railway.com/deploy/gtF9bg); one clean template-derived deployment remains | Validation pending |
-| Public release | Public repository and protected release branch; `v1.0.0` tag/release follows final CI | In progress |
+| Railway template | [Shareable two-service template](https://railway.com/deploy/gtF9bg) provisioned with zero prompts and verified end to end | Pass |
+| Public release | Public repository, protected main branch, and `v1.0.0` GitHub release | Pass |
 
 ## Readiness scorecard
 
@@ -37,7 +37,7 @@ Overall readiness: **4.7/5**.
 | Security and privacy | 4.1 | Strong V1 baseline and automated gates; stateless session revocation and CSP remain defense-in-depth work |
 | Backups and operations | 4.0 | Docker backup/restore and Railway backup guidance exist; owners must enable and test managed backups |
 | Open-source project quality | 4.8 | Clear positioning, MIT license, contribution/security paths, release record, screenshots, AI map, and automation |
-| Low-technical deployment | 4.5 | Public no-input Railway template exists; a template-derived smoke test remains |
+| Low-technical deployment | 4.8 | No-input Railway template is verified from provisioning through recovery |
 
 ## First run and onboarding
 
@@ -98,9 +98,9 @@ Railway remains the best initial hosted route. Chorebank now supplies the applic
 - reference-variable and generated-secret guidance;
 - explicit backup, PITR, update, and password-recovery instructions.
 
-The verified household flow is: **deploy app + PostgreSQL → wait for health → open the generated URL → copy the setup token → create household → sign in**. The [public two-service template](https://railway.com/deploy/gtF9bg) now packages this configuration with no required user input.
+The verified household flow is: **deploy app + PostgreSQL → wait for health → open the generated URL → copy the setup token → create household → sign in**. The [shareable two-service template](https://railway.com/deploy/gtF9bg) packages this configuration with no required user input. A clean project provisioned from that template completed the entire flow and retained its generated secrets, sessions, and household data across redeployment.
 
-The exact two-service configuration is in [docs/railway.md](docs/railway.md). Railway templates and their generated secrets are configured in Railway's template editor, so publishing cannot be completed solely through `railway.json`. Test the template in a fresh project before advertising it as one click. Railway's official documentation covers [creating templates](https://docs.railway.com/templates/create), [reference variables](https://docs.railway.com/variables/reference), [PostgreSQL](https://docs.railway.com/databases/postgresql), and [volume backups](https://docs.railway.com/volumes/backups).
+The exact two-service configuration is in [docs/railway.md](docs/railway.md). Railway's official documentation covers [creating templates](https://docs.railway.com/templates/create), [reference variables](https://docs.railway.com/variables/reference), [PostgreSQL](https://docs.railway.com/databases/postgresql), and [volume backups](https://docs.railway.com/volumes/backups). Marketplace publication is optional discoverability work; the direct template link is already deployable.
 
 ### Alternatives
 
@@ -114,10 +114,6 @@ Do not add another platform until real users validate the Railway path.
 
 ## Release recommendation
 
-Publish `v1.0.0` after final CI and the GitHub release step. The app itself has passed the V1 gate. For the advertised one-click path, complete these platform actions:
-
-1. Perform one clean deployment from the published template.
-2. Copy `SETUP_TOKEN`, complete `/setup`, then seal the token.
-3. Enable managed PostgreSQL backups and verify health and persistence after a redeploy.
+`v1.0.0` is published and every V1 release gate passes. Marketplace publication is optional. Each household owner should copy `SETUP_TOKEN`, complete `/setup`, seal the token, and enable managed PostgreSQL backups.
 
 No email subsystem, multi-tenant architecture, SQLite port, offline PWA, native app, or custom installer is required for Chorebank V1.
