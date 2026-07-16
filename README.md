@@ -63,7 +63,7 @@ Android tablets are regular browser clients. Open the LAN address in Chrome and 
 
 ## Deploy on Railway
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/gtF9bg)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/chorebank-v1)
 
 The template creates Chorebank and PostgreSQL together with generated secrets and no configuration questions. After deployment, open the app service variables, copy `SETUP_TOKEN`, and complete `/setup`. See the [Railway deployment guide](docs/railway.md) for backups, recovery, and updates.
 

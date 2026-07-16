@@ -24,7 +24,7 @@ Overall readiness: **4.8/5**.
 | Repository quality | MIT, polished README and screenshots, `llms.txt`, contributing/security/release docs, issue templates, Dependabot | Pass |
 | Independent release gate | Validation, security scans, live E2E, local build, and code audit | Pass |
 | Railway deployment | Fresh two-service deployment, setup, both login roles, persistence, recovery, and health check | Pass |
-| Railway template | [Shareable two-service template](https://railway.com/deploy/gtF9bg) provisioned with zero prompts and verified end to end | Pass |
+| Railway template | [Published two-service template](https://railway.com/deploy/chorebank-v1) provisioned with zero prompts and verified end to end | Pass |
 | Public release | Public repository, protected main branch, and `v1.0.0` GitHub release | Pass |
 
 ## Readiness scorecard
@@ -98,7 +98,7 @@ Railway remains the best initial hosted route. Chorebank now supplies the applic
 - reference-variable and generated-secret guidance;
 - explicit backup, PITR, update, and password-recovery instructions.
 
-The verified household flow is: **deploy app + PostgreSQL → wait for health → open the generated URL → copy the setup token → create household → sign in**. The [shareable two-service template](https://railway.com/deploy/gtF9bg) packages this configuration with no required user input. A clean project provisioned from that template completed the entire flow and retained its generated secrets, sessions, and household data across redeployment.
+The verified household flow is: **deploy app + PostgreSQL → wait for health → open the generated URL → copy the setup token → create household → sign in**. The [published two-service template](https://railway.com/deploy/chorebank-v1) packages this configuration with no required user input. A clean project provisioned from that template completed the entire flow and retained its generated secrets, sessions, and household data across redeployment.
 
 The exact two-service configuration is in [docs/railway.md](docs/railway.md). Railway's official documentation covers [creating templates](https://docs.railway.com/templates/create), [reference variables](https://docs.railway.com/variables/reference), [PostgreSQL](https://docs.railway.com/databases/postgresql), and [volume backups](https://docs.railway.com/volumes/backups). Marketplace publication is optional discoverability work; the direct template link is already deployable.
 
