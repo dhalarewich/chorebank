@@ -396,7 +396,7 @@ function BoardPanel({
           </button>
           <div>
             <div className={`child-name ${child.id}`}>{child.name}</div>
-            <div className="child-age">Age {child.age}</div>
+            {child.age > 0 ? <div className="child-age">Age {child.age}</div> : null}
           </div>
         </div>
         <BalanceChip value={child.coins} onTap={onBalanceTap} ariaLabel={`${child.name} coins: ${child.coins}`} />
@@ -1980,7 +1980,7 @@ export function ChoreBoardApp({
     return (
       <article className="phone-frame">
         <header className="p-header">
-          <button type="button" className="p-back" onClick={() => navigateParent("home")}>
+          <button type="button" className="p-back" onClick={() => navigateParent("home")} aria-label="Back to parent home">
             <svg className="icon icon-sm">
               <use href="#lucide-chevron-left"></use>
             </svg>
@@ -2113,7 +2113,7 @@ export function ChoreBoardApp({
   const renderParentPayday = () => (
     <article className="phone-frame">
       <header className="p-header">
-        <button type="button" className="p-back" onClick={() => navigateParent("home")}>
+        <button type="button" className="p-back" onClick={() => navigateParent("home")} aria-label="Back to parent home">
           <svg className="icon icon-sm">
             <use href="#lucide-chevron-left"></use>
           </svg>
@@ -2183,7 +2183,7 @@ export function ChoreBoardApp({
   const renderParentRedemptions = () => (
     <article className="phone-frame">
       <header className="p-header">
-        <button type="button" className="p-back" onClick={() => navigateParent("home")}>
+        <button type="button" className="p-back" onClick={() => navigateParent("home")} aria-label="Back to parent home">
           <svg className="icon icon-sm">
             <use href="#lucide-chevron-left"></use>
           </svg>
@@ -2680,7 +2680,7 @@ export function ChoreBoardApp({
     return (
       <article className="settings-frame settings-spec-frame">
         <header className="settings-header">
-          <button type="button" className="p-back" onClick={() => navigateParent("home")}>
+          <button type="button" className="p-back" onClick={() => navigateParent("home")} aria-label="Back to parent home">
             <svg className="icon icon-sm">
               <use href="#lucide-chevron-left"></use>
             </svg>
@@ -2734,7 +2734,7 @@ export function ChoreBoardApp({
                     <div className="cc-info">
                       <div className="cc-name">{child.name}</div>
                       <div className="cc-meta">
-                        Age {child.age} · {activeCount} chores
+                        {child.age > 0 ? `Age ${child.age} · ` : ""}{activeCount} chores
                       </div>
                     </div>
                     <svg className="icon icon-sm cc-chevron">
@@ -3450,6 +3450,23 @@ export function ChoreBoardApp({
                 aria-modal="true"
                 aria-labelledby="redeem-title"
                 onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    closeModal();
+                    return;
+                  }
+                  if (event.key !== "Tab") return;
+                  const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
+                  const first = buttons[0];
+                  const last = buttons.at(-1);
+                  if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last?.focus();
+                  } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first?.focus();
+                  }
+                }}
               >
                 <div className="redeem-icon">{reward.icon}</div>
                 <h2 className="redeem-title" id="redeem-title">
@@ -3463,7 +3480,7 @@ export function ChoreBoardApp({
                   You&apos;ll have <strong>{remaining} coins</strong> left
                 </div>
                 <div className="redeem-actions">
-                  <button type="button" className="redeem-cancel" onClick={closeModal}>
+                  <button type="button" className="redeem-cancel" onClick={closeModal} autoFocus>
                     Not Now
                   </button>
                   <button

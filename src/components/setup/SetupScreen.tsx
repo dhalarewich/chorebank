@@ -1,11 +1,18 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 export function SetupScreen({ householdSlug, configurationError }: { householdSlug: string; configurationError?: string }) {
   const [error, setError] = useState<string | null>(configurationError ?? null);
   const [complete, setComplete] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const timeZoneInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (timeZoneInputRef.current) {
+      timeZoneInputRef.current.value = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    }
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,7 +68,8 @@ export function SetupScreen({ householdSlug, configurationError }: { householdSl
 
         <form className="auth-form setup-form" onSubmit={submit}>
           <label className="auth-label" htmlFor="setup-token">Setup token</label>
-          <input className="auth-input" id="setup-token" name="setupToken" type="password" autoComplete="off" required />
+          <input className="auth-input" id="setup-token" name="setupToken" type="password" autoComplete="off" aria-describedby="setup-token-help" required />
+          <p id="setup-token-help" className="setup-help">Find this in your .env file or your hosting service&apos;s app variables.</p>
 
           <div className="setup-grid">
             <label className="setup-field">
@@ -76,7 +84,7 @@ export function SetupScreen({ householdSlug, configurationError }: { householdSl
           <p id="slug-help" className="setup-help">This matches DEFAULT_HOUSEHOLD_ID and cannot be changed here.</p>
 
           <label className="auth-label" htmlFor="time-zone">Timezone</label>
-          <input className="auth-input" id="time-zone" name="timeZone" autoComplete="off" defaultValue="America/Vancouver" placeholder="America/Vancouver" required />
+          <input ref={timeZoneInputRef} className="auth-input" id="time-zone" name="timeZone" autoComplete="off" defaultValue="UTC" placeholder="America/Vancouver" required />
 
           <label className="auth-label" htmlFor="parent-email">Parent email</label>
           <input className="auth-input" id="parent-email" name="parentEmail" type="email" autoComplete="email" required />
