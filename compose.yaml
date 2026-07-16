@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    restart: unless-stopped
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
@@ -15,6 +16,7 @@ services:
         condition: service_healthy
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: chorebank
       POSTGRES_USER: chorebank

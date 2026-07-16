@@ -38,4 +38,23 @@ describe("session utilities", () => {
     expect(session.isAuthenticated).toBe(false);
     expect(session.mode).toBe("live");
   });
+
+  it("rejects short and placeholder auth secrets in production", () => {
+    const environment = { ...process.env };
+    process.env = { ...process.env, NODE_ENV: "production" };
+    delete process.env.VERCEL_ENV;
+
+    try {
+      process.env.AUTH_SECRET = "short";
+      expect(() => createSessionCookieValue({ householdId: "alpha-home", actor: "parent" })).toThrow(/AUTH_SECRET must be at least 32 characters/);
+
+      process.env.AUTH_SECRET = `change-me-${"a".repeat(32)}`;
+      expect(() => createSessionCookieValue({ householdId: "alpha-home", actor: "parent" })).toThrow(/AUTH_SECRET must be at least 32 characters/);
+
+      process.env.AUTH_SECRET = "a".repeat(32);
+      expect(() => createSessionCookieValue({ householdId: "alpha-home", actor: "parent" })).not.toThrow();
+    } finally {
+      process.env = environment;
+    }
+  });
 });

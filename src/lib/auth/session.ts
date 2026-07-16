@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { isDemoModeAllowed, isProductionRuntime } from "@/lib/server/runtime-mode";
+import { isDemoModeAllowed, productionSecretError, RuntimeConfigurationError } from "@/lib/server/runtime-mode";
 
 export type ActorRole = "parent" | "kid";
 export type AppMode = "live" | "demo";
@@ -36,11 +36,9 @@ function base64UrlDecode(input: string): string {
 
 function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET;
-  if (secret) return secret;
-  if (isProductionRuntime()) {
-    throw new Error("AUTH_SECRET must be configured in production.");
-  }
-  return DEFAULT_DEV_AUTH_SECRET;
+  const configurationError = productionSecretError("AUTH_SECRET", secret);
+  if (configurationError) throw new RuntimeConfigurationError(configurationError);
+  return secret || DEFAULT_DEV_AUTH_SECRET;
 }
 
 function parseCookies(cookieHeader: string): Record<string, string> {

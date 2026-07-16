@@ -49,4 +49,15 @@ describe("POST /api/setup", () => {
     expect(response.status).toBe(400);
     expect(createHouseholdSetup).toHaveBeenCalledWith(expect.objectContaining({ householdSlug: "other-home" }), "home");
   });
+
+  it("rejects short or placeholder setup tokens in production", async () => {
+    process.env = { ...process.env, NODE_ENV: "production" };
+    delete process.env.VERCEL_ENV;
+    process.env.SETUP_TOKEN = `replace-with-a-setup-token-${"a".repeat(32)}`;
+
+    const response = await POST(new Request("http://localhost/api/setup", { method: "POST", body: JSON.stringify(setup) }));
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ error: expect.stringMatching(/SETUP_TOKEN must be at least 32 characters/) });
+  });
 });

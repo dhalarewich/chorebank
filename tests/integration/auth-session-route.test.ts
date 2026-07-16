@@ -66,4 +66,24 @@ describe("POST /api/auth/session", () => {
     const setCookie = response.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain("chorebank_session=");
   });
+
+  it("returns a clear production configuration error for an unsafe auth secret", async () => {
+    const environment = { ...process.env };
+    process.env = { ...process.env, NODE_ENV: "production", AUTH_SECRET: "short" };
+    delete process.env.VERCEL_ENV;
+    vi.mocked(verifyParentLogin).mockResolvedValue({ userId: "u_1", householdId: "chorebank-household" });
+
+    try {
+      const response = await POST(new Request("http://localhost:3000/api/auth/session", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "parent-login", email: "parent@example.test", password: "test-password" }),
+      }));
+
+      expect(response.status).toBe(503);
+      await expect(response.json()).resolves.toMatchObject({ code: "CONFIGURATION_ERROR", error: expect.stringMatching(/AUTH_SECRET must be at least 32 characters/) });
+    } finally {
+      process.env = environment;
+    }
+  });
 });

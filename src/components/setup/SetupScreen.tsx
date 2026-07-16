@@ -66,7 +66,7 @@ export function SetupScreen({ householdSlug, configurationError }: { householdSl
           <div className="setup-grid">
             <label className="setup-field">
               <span className="auth-label">Household name</span>
-              <input className="auth-input" name="householdName" minLength={2} maxLength={80} required />
+              <input className="auth-input" name="householdName" autoComplete="organization" minLength={2} maxLength={80} required />
             </label>
             <label className="setup-field">
               <span className="auth-label">Household slug</span>
@@ -76,7 +76,7 @@ export function SetupScreen({ householdSlug, configurationError }: { householdSl
           <p id="slug-help" className="setup-help">This matches DEFAULT_HOUSEHOLD_ID and cannot be changed here.</p>
 
           <label className="auth-label" htmlFor="time-zone">Timezone</label>
-          <input className="auth-input" id="time-zone" name="timeZone" defaultValue="America/Vancouver" placeholder="America/Vancouver" required />
+          <input className="auth-input" id="time-zone" name="timeZone" autoComplete="off" defaultValue="America/Vancouver" placeholder="America/Vancouver" required />
 
           <label className="auth-label" htmlFor="parent-email">Parent email</label>
           <input className="auth-input" id="parent-email" name="parentEmail" type="email" autoComplete="email" required />
@@ -88,7 +88,7 @@ export function SetupScreen({ householdSlug, configurationError }: { householdSl
           <div className="setup-grid">
             <label className="setup-field">
               <span className="auth-label">First child&apos;s name</span>
-              <input className="auth-input" name="childName" maxLength={80} required />
+              <input className="auth-input" name="childName" autoComplete="given-name" maxLength={80} required />
             </label>
             <label className="setup-field">
               <span className="auth-label">Kid PIN</span>
@@ -102,6 +102,7 @@ export function SetupScreen({ householdSlug, configurationError }: { householdSl
           </label>
 
           {error ? <div className="auth-error" role="alert">{error}</div> : null}
+          <div className="sr-only" role="status" aria-live="polite">{submitting ? "Creating household." : ""}</div>
           <button className="auth-submit" type="submit" disabled={submitting || Boolean(configurationError)}>
             {submitting ? "Creating household…" : "Create household"}
           </button>

@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createHouseholdSetup, householdSetupSchema, householdSlugSchema, SetupError } from "@/lib/server/setup";
+import { productionSecretError } from "@/lib/server/runtime-mode";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,8 @@ function validToken(actual: string, expected: string) {
 
 export async function POST(request: Request) {
   const configuredToken = process.env.SETUP_TOKEN;
+  const configurationError = productionSecretError("SETUP_TOKEN", configuredToken);
+  if (configurationError) return NextResponse.json({ error: configurationError }, { status: 503 });
   if (!configuredToken) return NextResponse.json({ error: "Browser setup is not configured." }, { status: 503 });
 
   try {
