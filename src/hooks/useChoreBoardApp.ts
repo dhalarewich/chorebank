@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { applyLiveBoardToState } from "@/lib/chore-board/hydrate";
 import { createInitialState, DAYS, REWARDS } from "@/lib/chore-board/defaults";
+import { createPaydayCoinLayout } from "@/lib/chore-board/payday-visuals";
 import type {
   AppState,
   AwardToast,
@@ -106,6 +107,7 @@ function createFallingCoins(seed: number): FallingCoin[] {
 }
 
 type MutableAudio = {
+  activeOscillators: Set<OscillatorNode>;
   context: AudioContext | null;
   unlocked: boolean;
 };
@@ -127,16 +129,22 @@ function parseApiErrorMessage(errorBody: unknown, status: number): string {
   return `Request failed (${status})`;
 }
 
-export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: () => void }) {
+export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: () => void; reduceMotion?: boolean }) {
   const liveApi = options?.liveApi ?? false;
   const onAuthError = options?.onAuthError;
   const [state, setState] = useState<AppState>(createInitialState);
   const [rewards, setRewards] = useState<Reward[]>(REWARDS);
   const [apiError, setApiError] = useState<string | null>(null);
   const stateRef = useRef(state);
-  const timeoutsRef = useRef<number[]>([]);
-  const rafsRef = useRef<number[]>([]);
-  const audioRef = useRef<MutableAudio>({ context: null, unlocked: false });
+  const timeoutsRef = useRef<Set<number>>(new Set());
+  const celebrationTimeoutsRef = useRef<Set<number>>(new Set());
+  const celebrationRafsRef = useRef<Set<number>>(new Set());
+  const audioRef = useRef<MutableAudio>({ activeOscillators: new Set(), context: null, unlocked: false });
+  const reduceMotionRef = useRef(options?.reduceMotion ?? false);
+
+  useEffect(() => {
+    reduceMotionRef.current = options?.reduceMotion ?? false;
+  }, [options?.reduceMotion]);
 
   useEffect(() => {
     stateRef.current = state;
@@ -144,11 +152,18 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
 
   useEffect(() => {
     const timeoutIds = timeoutsRef.current;
-    const rafIds = rafsRef.current;
+    const celebrationTimeoutIds = celebrationTimeoutsRef.current;
+    const celebrationRafIds = celebrationRafsRef.current;
+    const audio = audioRef.current;
 
     return () => {
       timeoutIds.forEach((id) => window.clearTimeout(id));
-      rafIds.forEach((id) => window.cancelAnimationFrame(id));
+      celebrationTimeoutIds.forEach((id) => window.clearTimeout(id));
+      celebrationRafIds.forEach((id) => window.cancelAnimationFrame(id));
+      document.querySelectorAll("[data-payday-effect]").forEach((node) => node.remove());
+      audio.activeOscillators.forEach((oscillator) => oscillator.stop());
+      audio.activeOscillators.clear();
+      if (audio.context?.state !== "closed") void audio.context?.close();
     };
   }, []);
 
@@ -161,10 +176,37 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
   }, []);
 
   const queueTimeout = useCallback((fn: () => void, delay: number) => {
-    const id = window.setTimeout(fn, delay);
-    timeoutsRef.current.push(id);
+    const id = window.setTimeout(() => {
+      timeoutsRef.current.delete(id);
+      fn();
+    }, delay);
+    timeoutsRef.current.add(id);
     return id;
   }, []);
+
+  const clearCelebrationEffects = useCallback(() => {
+    celebrationTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    celebrationTimeoutsRef.current.clear();
+    celebrationRafsRef.current.forEach((id) => window.cancelAnimationFrame(id));
+    celebrationRafsRef.current.clear();
+    document.querySelectorAll("[data-payday-effect]").forEach((node) => node.remove());
+    audioRef.current.activeOscillators.forEach((oscillator) => oscillator.stop());
+    audioRef.current.activeOscillators.clear();
+  }, []);
+
+  const queueCelebrationTimeout = useCallback((fn: () => void, delay: number) => {
+    const id = window.setTimeout(() => {
+      celebrationTimeoutsRef.current.delete(id);
+      fn();
+    }, delay);
+    celebrationTimeoutsRef.current.add(id);
+    return id;
+  }, []);
+
+  const shouldAnimate = useCallback(
+    () => stateRef.current.settings.animations && !reduceMotionRef.current,
+    [],
+  );
 
   const reportActionError = useCallback((error: unknown) => {
     const fallback = "Something went wrong. Please try again.";
@@ -275,6 +317,8 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
     gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
 
     osc.connect(gain).connect(ctx.destination);
+    audioRef.current.activeOscillators.add(osc);
+    osc.addEventListener("ended", () => audioRef.current.activeOscillators.delete(osc), { once: true });
     osc.start(start);
     osc.stop(start + duration + 0.02);
   }, [ensureContext]);
@@ -318,6 +362,15 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
     tone(1240, 0.1, "triangle", 0.02, 0.06);
   }, [tone, unlockSound]);
 
+  const soundPaydayClinks = useCallback(() => {
+    unlockSound();
+    [0.28, 0.43, 0.57, 0.73, 0.9, 1.08, 1.27].forEach((delay, index) => {
+      const frequency = index % 3 === 0 ? 1680 : index % 3 === 1 ? 1340 : 1520;
+      tone(frequency, 0.045, "triangle", 0.012, delay);
+      tone(frequency * 1.48, 0.028, "sine", 0.006, delay + 0.012);
+    });
+  }, [tone, unlockSound]);
+
   const soundRedeem = useCallback(() => {
     unlockSound();
     tone(690, 0.12, "triangle", 0.032);
@@ -346,6 +399,8 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
         gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.26);
 
         osc.connect(gain).connect(ctx.destination);
+        audioRef.current.activeOscillators.add(osc);
+        osc.addEventListener("ended", () => audioRef.current.activeOscillators.delete(osc), { once: true });
         osc.start(start);
         osc.stop(start + 0.28);
       }
@@ -363,7 +418,7 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
   }, [tone, unlockSound]);
 
   const spawnSparkles = useCallback((target: HTMLElement) => {
-    if (!stateRef.current.settings.animations) return;
+    if (!shouldAnimate()) return;
 
     const rect = target.getBoundingClientRect();
     const originX = rect.left + rect.width / 2;
@@ -403,10 +458,10 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
       document.body.appendChild(glyph);
       queueTimeout(() => glyph.remove(), 1020);
     }
-  }, [queueTimeout]);
+  }, [queueTimeout, shouldAnimate]);
 
   const spawnRewardBurst = useCallback((target: HTMLElement, count = 8) => {
-    if (!stateRef.current.settings.animations) return;
+    if (!shouldAnimate()) return;
 
     const rect = target.getBoundingClientRect();
     const originX = rect.left + rect.width / 2;
@@ -422,10 +477,10 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
       document.body.appendChild(burst);
       queueTimeout(() => burst.remove(), 420);
     }
-  }, [queueTimeout]);
+  }, [queueTimeout, shouldAnimate]);
 
   const spawnSpendCoins = useCallback((target: HTMLElement, cost: number) => {
-    if (!stateRef.current.settings.animations) return;
+    if (!shouldAnimate()) return;
 
     const rect = target.getBoundingClientRect();
     const originX = rect.left + rect.width * 0.76;
@@ -444,10 +499,10 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
       document.body.appendChild(coin);
       queueTimeout(() => coin.remove(), 760);
     }
-  }, [queueTimeout]);
+  }, [queueTimeout, shouldAnimate]);
 
   const spawnPaydayFinaleBurst = useCallback((childId: ChildId) => {
-    if (!stateRef.current.settings.animations) return;
+    if (!shouldAnimate()) return;
 
     const target = document.querySelector<HTMLElement>(`[data-count-balance="${childId}"]`);
     if (!target) return;
@@ -458,10 +513,11 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
 
     const ring = document.createElement("span");
     ring.className = "payday-finale-ring";
+    ring.dataset.paydayEffect = "true";
     ring.style.left = `${originX}px`;
     ring.style.top = `${originY}px`;
     document.body.appendChild(ring);
-    queueTimeout(() => ring.remove(), 1100);
+    queueCelebrationTimeout(() => ring.remove(), 1100);
 
     const burstCount = 34;
 
@@ -471,6 +527,7 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
       const lift = 42 + Math.random() * 74;
 
       const piece = document.createElement("span");
+      piece.dataset.paydayEffect = "true";
       const roll = Math.random();
 
       if (roll > 0.84) {
@@ -492,67 +549,69 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
       piece.style.setProperty("--delay", `${Math.round(Math.random() * 140)}ms`);
 
       document.body.appendChild(piece);
-      queueTimeout(() => piece.remove(), 1500);
+      queueCelebrationTimeout(() => piece.remove(), 1500);
     }
-  }, [queueTimeout]);
+  }, [queueCelebrationTimeout, shouldAnimate]);
 
-  const spawnPaydayCoins = useCallback((stage: HTMLElement, count: number, startDelay: number, isInterest: boolean) => {
-    if (count <= 0) return;
-
+  const spawnPaydayCoins = useCallback((stage: HTMLElement, stars: number, interest: number, seed: number, settled = false) => {
     const stageWidth = Math.max(260, stage.clientWidth || 420);
     const stageHeight = Math.max(190, stage.clientHeight || 240);
-    const coinSize = Math.max(26, Math.min(46, Math.round(stageHeight * 0.16)));
-    const cols = Math.max(6, Math.min(10, Math.floor(stageWidth / (coinSize * 0.82))));
-    const rows = Math.max(4, Math.ceil(count / cols));
+    const coinSize = Math.max(28, Math.min(48, Math.round(stageHeight * 0.16)));
+    const layout = createPaydayCoinLayout({ width: stageWidth, height: stageHeight, stars, interest, seed });
 
-    for (let index = 0; index < count; index += 1) {
+    layout.forEach((pose) => {
       const coin = document.createElement("span");
-      coin.className = `payday-coin${isInterest ? " interest" : ""}`;
-
-      const row = Math.floor(index / cols);
-      const col = index % cols;
-      const xBase = (col - (cols - 1) / 2) * (coinSize * 0.76);
-      const xJitter = (Math.random() - 0.5) * (coinSize * 0.34);
-      const clampedRow = Math.min(row, rows + 1);
-      const yBase = stageHeight - coinSize - clampedRow * (coinSize * 0.34);
-      const yJitter = (Math.random() - 0.5) * (coinSize * 0.22);
+      coin.className = `payday-coin${pose.interest ? " interest" : ""}${settled || !shouldAnimate() ? " settled" : ""}`;
 
       coin.style.setProperty("--coin-size", `${coinSize}px`);
-      coin.style.setProperty("--sx", `${(Math.random() - 0.5) * stageWidth * 0.62}px`);
-      coin.style.setProperty("--tx", `${xBase + xJitter}px`);
-      coin.style.setProperty("--ty", `${yBase + yJitter}px`);
-      coin.style.setProperty("--r1", `${(Math.random() - 0.5) * 260}deg`);
-      coin.style.setProperty("--r2", `${(Math.random() - 0.5) * 18}deg`);
-      coin.style.animationDelay = `${startDelay + index * (isInterest ? 120 : 48)}ms`;
-      coin.innerHTML = `<svg viewBox=\"0 0 24 24\"><use href=\"#coin\"></use></svg>`;
+      coin.style.setProperty("--sx", `${pose.startX}px`);
+      coin.style.setProperty("--fx", `${pose.flightX}px`);
+      coin.style.setProperty("--tx", `${pose.endX}px`);
+      coin.style.setProperty("--ty", `${pose.endY}px`);
+      coin.style.setProperty("--spin", `${pose.rotation}deg`);
+      coin.style.setProperty("--tilt", `${pose.tilt}deg`);
+      coin.style.setProperty("--coin-scale", `${pose.scale}`);
+      coin.style.setProperty("--drop-delay", `${pose.delay}ms`);
+      coin.style.setProperty("--drop-duration", `${pose.duration}ms`);
+      coin.style.zIndex = String(pose.zIndex);
+      coin.innerHTML = `<span class=\"payday-coin-face\"><svg viewBox=\"0 0 24 24\"><use href=\"#coin\"></use></svg></span>`;
 
       stage.appendChild(coin);
-    }
-  }, []);
+    });
+  }, [shouldAnimate]);
 
-  const animatePaydayCoinStage = useCallback((childId: ChildId, stars: number, interest: number) => {
+  const animatePaydayCoinStage = useCallback((childId: ChildId, stars: number, interest: number, settled = false) => {
     const stage = document.querySelector<HTMLElement>(`[data-coin-stage="${childId}"]`);
     if (!stage) return;
 
-    const earned = stars + interest;
-    const visualTotal = Math.min(earned, 28);
-    const visualInterest = earned > 0 ? Math.min(6, Math.max(interest > 0 ? 1 : 0, Math.round((interest / earned) * visualTotal))) : 0;
-    const visualStars = Math.max(0, visualTotal - visualInterest);
-
     stage.querySelectorAll(".payday-coin").forEach((coin) => coin.remove());
-
-    if (!stateRef.current.settings.animations) {
-      const staticCount = Math.max(1, Math.min(8, visualTotal));
-      spawnPaydayCoins(stage, staticCount, 0, false);
-      return;
-    }
-
-    spawnPaydayCoins(stage, visualStars, 120, false);
-    spawnPaydayCoins(stage, visualInterest, 980, true);
+    const childSeed = [...childId].reduce((value, char) => value + char.charCodeAt(0), stateRef.current.celebrationSeed);
+    spawnPaydayCoins(stage, stars, interest, childSeed, settled);
   }, [spawnPaydayCoins]);
 
+  useEffect(() => {
+    let resizeTimeout: number | undefined;
+    const rebuildSettledPiles = () => {
+      window.clearTimeout(resizeTimeout);
+      resizeTimeout = window.setTimeout(() => {
+        const current = stateRef.current;
+        if (current.kidsScreen !== "celebration") return;
+        (Object.keys(current.paydaySummary) as ChildId[]).forEach((childId) => {
+          const summary = current.paydaySummary[childId];
+          animatePaydayCoinStage(childId, summary.stars, summary.interest, true);
+        });
+      }, 120);
+    };
+
+    window.addEventListener("resize", rebuildSettledPiles);
+    return () => {
+      window.removeEventListener("resize", rebuildSettledPiles);
+      window.clearTimeout(resizeTimeout);
+    };
+  }, [animatePaydayCoinStage]);
+
   const animateCelebrationCount = useCallback((childId: ChildId, field: CountField, from: number, to: number, duration: number) => {
-    if (!stateRef.current.settings.animations) {
+    if (!shouldAnimate()) {
       updateState((draft) => {
         draft.celebrationVisuals[childId][field] = to;
       });
@@ -573,18 +632,26 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
       });
 
       if (progress < 1) {
-        const nextRaf = window.requestAnimationFrame(frame);
-        rafsRef.current.push(nextRaf);
+        const nextRaf = window.requestAnimationFrame((time) => {
+          celebrationRafsRef.current.delete(nextRaf);
+          frame(time);
+        });
+        celebrationRafsRef.current.add(nextRaf);
       }
     };
 
-    const raf = window.requestAnimationFrame(frame);
-    rafsRef.current.push(raf);
-  }, [updateState]);
+    const raf = window.requestAnimationFrame((time) => {
+      celebrationRafsRef.current.delete(raf);
+      frame(time);
+    });
+    celebrationRafsRef.current.add(raf);
+  }, [shouldAnimate, updateState]);
 
   const runCelebrationSequence = useCallback(() => {
     const current = stateRef.current;
     if (current.celebrationPlayed || current.kidsScreen !== "celebration") return;
+
+    clearCelebrationEffects();
 
     updateState((draft) => {
       draft.celebrationPlayed = true;
@@ -592,7 +659,7 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
 
     const latest = stateRef.current;
 
-    if (!latest.settings.animations) {
+    if (!shouldAnimate()) {
       updateState((draft) => {
         (Object.keys(draft.paydaySummary) as ChildId[]).forEach((childId) => {
           const summary = draft.paydaySummary[childId];
@@ -616,30 +683,34 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
     (Object.keys(latest.paydaySummary) as ChildId[]).forEach((childId) => {
       const summary = latest.paydaySummary[childId];
 
-      queueTimeout(() => {
+      queueCelebrationTimeout(() => {
         updateState((draft) => {
           draft.celebrationVisuals[childId].showStars = true;
         });
         animateCelebrationCount(childId, "stars", 0, summary.stars, 650);
         animatePaydayCoinStage(childId, summary.stars, summary.interest);
-        soundAction();
       }, 200);
 
-      queueTimeout(() => {
+      queueCelebrationTimeout(() => {
         updateState((draft) => {
           draft.celebrationVisuals[childId].showInterest = true;
         });
         animateCelebrationCount(childId, "interest", 0, summary.interest, 520);
-        soundInterest();
       }, 950);
 
-      queueTimeout(() => {
+      queueCelebrationTimeout(() => {
         animateCelebrationCount(childId, "balance", summary.carried, summary.newBalance, 760);
-        soundPaydayFinale();
         spawnPaydayFinaleBurst(childId);
       }, 1650);
     });
-  }, [animateCelebrationCount, animatePaydayCoinStage, queueTimeout, soundAction, soundInterest, soundPaydayFinale, spawnPaydayFinaleBurst, updateState]);
+
+    queueCelebrationTimeout(() => {
+      soundAction();
+      soundPaydayClinks();
+    }, 200);
+    queueCelebrationTimeout(soundInterest, 950);
+    queueCelebrationTimeout(soundPaydayFinale, 1650);
+  }, [animateCelebrationCount, animatePaydayCoinStage, clearCelebrationEffects, queueCelebrationTimeout, shouldAnimate, soundAction, soundInterest, soundPaydayClinks, soundPaydayFinale, spawnPaydayFinaleBurst, updateState]);
 
   const setCellState = useCallback((draft: AppState, childId: ChildId, rowId: string, day: number, isBonus: boolean, nextState: StarCellState) => {
     const child = getChild(draft.children, childId);
@@ -735,6 +806,8 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
   }, [updateState]);
 
   const seePayday = useCallback(() => {
+    clearCelebrationEffects();
+    unlockSound();
     if (liveApi) {
       void syncLiveMutation("/api/payday/screen", { screen: "celebration" }, "PATCH").catch((error) => {
         reportActionError(error);
@@ -757,9 +830,10 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
         };
       });
     });
-  }, [liveApi, reportActionError, syncLiveMutation, updateState]);
+  }, [clearCelebrationEffects, liveApi, reportActionError, syncLiveMutation, unlockSound, updateState]);
 
   const closePayday = useCallback(() => {
+    clearCelebrationEffects();
     if (liveApi) {
       void syncLiveMutation("/api/payday/screen", { screen: "closed" }, "PATCH").catch((error) => {
         reportActionError(error);
@@ -771,7 +845,7 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
       draft.kidsScreen = "closed";
       draft.view = "kids";
     });
-  }, [liveApi, reportActionError, syncLiveMutation, updateState]);
+  }, [clearCelebrationEffects, liveApi, reportActionError, syncLiveMutation, updateState]);
 
   const openRedeem = useCallback((childId: ChildId, rewardId: string) => {
     updateState((draft) => {
@@ -1092,6 +1166,8 @@ export function useChoreBoardApp(options?: { liveApi?: boolean; onAuthError?: ()
 
     if (!soundEnabled) {
       store.unlocked = false;
+      store.activeOscillators.forEach((oscillator) => oscillator.stop());
+      store.activeOscillators.clear();
       if (store.context && store.context.state === "running") {
         void store.context.suspend();
       }

@@ -396,7 +396,7 @@ function BoardPanel({
           </button>
           <div>
             <div className={`child-name ${child.id}`}>{child.name}</div>
-            <div className="child-age">Age {child.age}</div>
+            {child.age > 0 ? <div className="child-age">Age {child.age}</div> : null}
           </div>
         </div>
         <BalanceChip value={child.coins} onTap={onBalanceTap} ariaLabel={`${child.name} coins: ${child.coins}`} />
@@ -505,10 +505,17 @@ function CelebrationCard({ child, stars, interest, balance, showStars, showInter
       </div>
 
       <div className="coin-stage" data-coin-stage={child.id} aria-hidden="true">
+        <div className="coin-chute">
+          <span></span>
+        </div>
         <div className="coin-stage-floor"></div>
+        <div className="pile-summary">
+          <strong>+{stars + interest}</strong>
+          <span>coins minted</span>
+        </div>
       </div>
 
-      <div className="balance-total">
+      <div className="balance-total" aria-live="polite">
         <div className="label">
           <span className="coin-icon">
             <CoinUse />
@@ -575,6 +582,7 @@ export function ChoreBoardApp({
   const router = useRouter();
   const pathname = usePathname();
   const isNarrow = useMediaQuery("(max-width: 1080px)");
+  const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   // The server only renders demo mode when it is allowed; include initialMode so
   // local .env files cannot make the client disagree with that server decision.
   const demoModeAllowed = initialMode === "demo" || process.env.NODE_ENV !== "production";
@@ -662,6 +670,7 @@ export function ChoreBoardApp({
   } = useChoreBoardApp({
     liveApi: !isDemoMode,
     onAuthError: handleAuthError,
+    reduceMotion: prefersReducedMotion,
   });
 
   const {
@@ -758,11 +767,11 @@ export function ChoreBoardApp({
   );
 
   useEffect(() => {
-    document.body.classList.toggle("reduce-motion", !state.settings.animations);
+    document.body.classList.toggle("reduce-motion", !state.settings.animations || prefersReducedMotion);
     return () => {
       document.body.classList.remove("reduce-motion");
     };
-  }, [state.settings.animations]);
+  }, [prefersReducedMotion, state.settings.animations]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1681,8 +1690,21 @@ export function ChoreBoardApp({
             </div>
 
             <div className="celebration-inner">
+              <div className="celebration-toolbar">
+                <span className="celebration-kicker">The Coin Foundry</span>
+                <button
+                  type="button"
+                  className="celebration-sound"
+                  onClick={toggleSounds}
+                  aria-pressed={state.settings.sounds}
+                  aria-label={state.settings.sounds ? "Mute payday sounds" : "Turn on payday sounds"}
+                >
+                  <span aria-hidden="true">{state.settings.sounds ? "🔊" : "🔇"}</span>
+                  {state.settings.sounds ? "Sound on" : "Sound off"}
+                </button>
+              </div>
               <div className="celebration-title">🎉 Payday! 🎉</div>
-              <div className="celebration-subtitle">Here&apos;s what your stars turned into</div>
+              <div className="celebration-subtitle">Stars in. Shiny new coins out.</div>
 
               <div className="celebration-grid">
                 {state.children.map((child) => {
@@ -1958,7 +1980,7 @@ export function ChoreBoardApp({
     return (
       <article className="phone-frame">
         <header className="p-header">
-          <button type="button" className="p-back" onClick={() => navigateParent("home")}>
+          <button type="button" className="p-back" onClick={() => navigateParent("home")} aria-label="Back to parent home">
             <svg className="icon icon-sm">
               <use href="#lucide-chevron-left"></use>
             </svg>
@@ -2091,7 +2113,7 @@ export function ChoreBoardApp({
   const renderParentPayday = () => (
     <article className="phone-frame">
       <header className="p-header">
-        <button type="button" className="p-back" onClick={() => navigateParent("home")}>
+        <button type="button" className="p-back" onClick={() => navigateParent("home")} aria-label="Back to parent home">
           <svg className="icon icon-sm">
             <use href="#lucide-chevron-left"></use>
           </svg>
@@ -2161,7 +2183,7 @@ export function ChoreBoardApp({
   const renderParentRedemptions = () => (
     <article className="phone-frame">
       <header className="p-header">
-        <button type="button" className="p-back" onClick={() => navigateParent("home")}>
+        <button type="button" className="p-back" onClick={() => navigateParent("home")} aria-label="Back to parent home">
           <svg className="icon icon-sm">
             <use href="#lucide-chevron-left"></use>
           </svg>
@@ -2658,7 +2680,7 @@ export function ChoreBoardApp({
     return (
       <article className="settings-frame settings-spec-frame">
         <header className="settings-header">
-          <button type="button" className="p-back" onClick={() => navigateParent("home")}>
+          <button type="button" className="p-back" onClick={() => navigateParent("home")} aria-label="Back to parent home">
             <svg className="icon icon-sm">
               <use href="#lucide-chevron-left"></use>
             </svg>
@@ -2712,7 +2734,7 @@ export function ChoreBoardApp({
                     <div className="cc-info">
                       <div className="cc-name">{child.name}</div>
                       <div className="cc-meta">
-                        Age {child.age} · {activeCount} chores
+                        {child.age > 0 ? `Age ${child.age} · ` : ""}{activeCount} chores
                       </div>
                     </div>
                     <svg className="icon icon-sm cc-chevron">
@@ -3428,6 +3450,23 @@ export function ChoreBoardApp({
                 aria-modal="true"
                 aria-labelledby="redeem-title"
                 onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    closeModal();
+                    return;
+                  }
+                  if (event.key !== "Tab") return;
+                  const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
+                  const first = buttons[0];
+                  const last = buttons.at(-1);
+                  if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last?.focus();
+                  } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first?.focus();
+                  }
+                }}
               >
                 <div className="redeem-icon">{reward.icon}</div>
                 <h2 className="redeem-title" id="redeem-title">
@@ -3441,7 +3480,7 @@ export function ChoreBoardApp({
                   You&apos;ll have <strong>{remaining} coins</strong> left
                 </div>
                 <div className="redeem-actions">
-                  <button type="button" className="redeem-cancel" onClick={closeModal}>
+                  <button type="button" className="redeem-cancel" onClick={closeModal} autoFocus>
                     Not Now
                   </button>
                   <button
