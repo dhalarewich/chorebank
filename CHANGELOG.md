@@ -7,6 +7,11 @@ All notable changes are recorded here. This project follows [Keep a Changelog](h
 ### Added
 
 - Shareable no-input Railway template for one-click Chorebank and PostgreSQL deployment, verified in a clean project through setup, login, redeployment, and recovery.
+- Public Chorebank coin icon for the Railway template.
+
+### Removed
+
+- Empty legacy prototype marker and its obsolete isolation checker.
 
 ## [1.0.0] - 2026-07-16
 

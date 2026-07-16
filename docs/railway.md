@@ -4,6 +4,8 @@ Chorebank can be a two-service Railway template: the app from this repository pl
 
 [Deploy the Chorebank template](https://railway.com/deploy/gtF9bg).
 
+Railway template icon: `https://raw.githubusercontent.com/dhalarewich/chorebank/main/public/chorebank-coin.png`
+
 ## Template configuration
 
 Create an app service and a PostgreSQL service named `Postgres`. Enable public HTTP networking for the app, then configure these app variables in the template editor:
