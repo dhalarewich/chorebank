@@ -2,7 +2,7 @@
 
 Chorebank can be a two-service Railway template: the app from this repository plus Railway PostgreSQL. The repository's `railway.json` uses the Dockerfile, applies Prisma migrations before deploy, and waits for the database-aware `/api/health` check.
 
-[Deploy the Chorebank template](https://railway.com/deploy/gtF9bg).
+[Deploy the Chorebank template](https://railway.com/deploy/chorebank-v1).
 
 Railway template icon: `https://raw.githubusercontent.com/dhalarewich/chorebank/main/public/chorebank-coin.png`
 
