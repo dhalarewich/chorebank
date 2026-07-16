@@ -11,21 +11,21 @@ Create an app service and a PostgreSQL service named `Postgres`. Enable public H
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` | Private PostgreSQL connection |
 | `DIRECT_URL` | `${{Postgres.DATABASE_URL}}` | Direct connection used by Prisma migrations |
 | `AUTH_SECRET` | `${{secret(43)}}` | Signs login sessions; seal this variable |
-| `SETUP_TOKEN` | `${{secret(32)}}` | Protects first-run browser setup; seal this variable |
+| `SETUP_TOKEN` | `${{secret(32)}}` | Protects first-run browser setup; leave visible until setup is complete |
 | `DEFAULT_HOUSEHOLD_ID` | `home` | Canonical lowercase household slug |
 | `TENANCY_MODE` | `single` | Chorebank V1 supports one household per deployment |
 | `NODE_ENV` | `production` | Disables development-only behavior |
 
 Do not add the parent password or kid PIN as variables. The owner enters them once at `/setup`; Chorebank stores only password hashes in PostgreSQL.
 
-Railway templates and generated secrets are configured in the Railway template editor, not in `railway.json`. Use reference variables so Railway deploys PostgreSQL before the app. Publish the template only after testing it in a fresh Railway project.
+Railway templates and generated secrets are configured in the Railway template editor, not in `railway.json`. Use reference variables so Railway deploys PostgreSQL before the app. Do not seal `SETUP_TOKEN` in the template: sealed values cannot be viewed, and the owner needs this value for `/setup`. Publish the template only after testing it in a fresh Railway project.
 
 ## Household owner actions
 
 1. Deploy the template and wait for both services to become healthy.
 2. Open the app's generated domain. An empty installation redirects to `/setup`.
 3. Copy the app service's `SETUP_TOKEN` value, complete setup, and sign in. Setup permanently closes after the first household is created.
-4. Seal `AUTH_SECRET` and `SETUP_TOKEN` if the template did not already seal them. Keep `AUTH_SECRET` stable; changing it signs everyone out.
+4. Seal `SETUP_TOKEN` after setup. Keep `AUTH_SECRET` stable; changing it signs everyone out.
 5. Open the Postgres service's **Backups** tab and enable at least daily volume backups. For finer recovery, enable Railway PITR there as well. Run a restore drill before relying on either feature.
 6. Keep automatic deploys on a stable release branch and review release notes before upgrades that include database migrations.
 
